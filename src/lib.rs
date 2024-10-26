@@ -28,7 +28,7 @@ impl Wordle {
                 return Some(i);
             }
 
-            let correctness = todo!();
+            let correctness = Correctness::compute(answer, &guess);
             history.push(Guess {
                 word: guess,
                 mask: correctness,
@@ -69,14 +69,14 @@ impl Correctness {
             if answer.chars().enumerate().any(|(j, a)| {
                 if a == g && !used[j] {
                     used[j] = true;
-                    println!("checking guess char {g} at pos {i} FOUND MISPLACED at {j} char: {a}");
+                    // println!("checking guess char {g} at pos {i} FOUND MISPLACED at {j} char: {a}");
                     return true;
                 };
                 false
             }) {
-                println!("IN HERE");
+                // println!("IN HERE");
                 c[i] = Correctness::Misplaced;
-                println!("c after misplaced:{:?}", c);
+                // println!("c after misplaced:{:?}", c);
             } else {
                 c[i] = Correctness::Wrong;
             }
@@ -89,28 +89,81 @@ pub struct Guess {
     word: String,
     mask: [Correctness; 5],
 }
+
+impl Guess {
+    pub fn matches(&self, word: &str) -> bool {
+        //check greens
+        assert_eq!(self.word.len(), 3);
+        assert_eq!(word.len(), 3);
+        let mut used = [false; 5];
+        for (i, ((g, m), w)) in self
+            .word
+            .chars()
+            .zip(&self.mask)
+            .zip(word.chars())
+            .enumerate()
+        {
+            if *m == Correctness::Correct {
+                if g != w {
+                    return false;
+                }
+                used[i] = true;
+            }
+        }
+
+        for (i, ((g, m), w)) in self
+            .word
+            .chars()
+            .zip(&self.mask)
+            .zip(word.chars())
+            .enumerate()
+        {
+            if let Some(j) =
+                self.word
+                    .chars()
+                    .zip(&self.mask)
+                    .enumerate()
+                    .find_map(|(j, (g, m))| {
+                        //if char of guess does not match the char from word being checked
+                        if g != w || used[j] {
+                            return None;
+                        };
+                        //we're looking for a char 'X' in 'word, and hace found a char 'X' in previous guess;
+                        //it's colout in the previous geuss shoudl tell us if the current char might be okay
+                        match m {
+                            Correctness::Correct => unreachable!(),
+                            Correctness::Misplaced => todo!(),
+                            Correctness::Wrong => todo!(),
+                        }
+                    })
+            {}
+        }
+        for (i, w) in word.chars().enumerate() {}
+        true
+    }
+}
+
 pub trait Guesser {
     fn guess(&mut self, history: &[Guess]) -> String;
 }
 
-// impl<F: Fn(&[Guess]) -> String> Guesser for F {
-//     fn guess(&mut self, history: &[Guess]) -> String {
-//         (*self)(history)
-//     }
-// }
-
-#[cfg(test)]
-macro_rules! guesser {
-    (|$history:ident| $impl:block) => {{
-        struct G;
-        impl $crate::Guesser for G {
-            fn guess(&mut self, $history: &[Guess]) -> String {
-                $impl
-            }
-        }
-        G
-    }};
+impl<F: Fn(&[Guess]) -> String> Guesser for F {
+    fn guess(&mut self, history: &[Guess]) -> String {
+        (*self)(history)
+    }
 }
 
+#[cfg(test)]
+// macro_rules! guesser {
+//     (|$history:ident| $impl:block) => {{
+//         struct G;
+//         impl $crate::Guesser for G {
+//             fn guess(&mut self, $history: &[Guess]) -> String {
+//                 $impl
+//             }
+//         }
+//         G
+//     }};
+// }
 #[cfg(test)]
 mod tests;

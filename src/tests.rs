@@ -1,24 +1,91 @@
 // use super::*;
 
 mod tests {
-
     mod game {
         use crate::Guess;
         use crate::Wordle;
         #[test]
-        fn one_go() {
+        fn genius() {
             let w = Wordle::new();
-            // assert_eq!(w.play("moved",|_history: &[Guess]| "moved".to_string()), Some(1));
-            let guesser = guesser!(|_history| { "moved".to_string() });
-            assert_eq!(w.play("moved", guesser), Some(1));
+            assert_eq!(
+                w.play("moved", |_history: &[Guess]| "moved".to_string()),
+                Some(1)
+            );
         }
 
         #[test]
-        fn two_go() {
+        fn magnificent() {
             let w = Wordle::new();
-            // assert_eq!(w.play("moved",|_history: &[Guess]| "moved".to_string()), Some(1));
-            let guesser = guesser!(|_history| { "moved".to_string() });
-            assert_eq!(w.play("moved", guesser), Some(1));
+            assert_eq!(
+                w.play("moved", |_history: &[Guess]| {
+                    if _history.len() == 1 {
+                        return "moved".to_string();
+                    }
+                    return "wrong".to_string();
+                }),
+                Some(2)
+            );
+        }
+        #[test]
+        fn impressive() {
+            let w = Wordle::new();
+
+            assert_eq!(
+                w.play("moved", |_history: &[Guess]| {
+                    if _history.len() == 2 {
+                        return "moved".to_string();
+                    }
+                    return "wrong".to_string();
+                }),
+                Some(3)
+            );
+        }
+        #[test]
+        fn splendid() {
+            let w = Wordle::new();
+            assert_eq!(
+                w.play("moved", |_history: &[Guess]| {
+                    if _history.len() == 3 {
+                        return "moved".to_string();
+                    }
+                    return "wrong".to_string();
+                }),
+                Some(4)
+            );
+        }
+        #[test]
+        fn great() {
+            let w = Wordle::new();
+            assert_eq!(
+                w.play("moved", |_history: &[Guess]| {
+                    if _history.len() == 4 {
+                        return "moved".to_string();
+                    }
+                    return "wrong".to_string();
+                }),
+                Some(5)
+            );
+        }
+        #[test]
+        fn phew() {
+            let w = Wordle::new();
+            assert_eq!(
+                w.play("moved", |_history: &[Guess]| {
+                    if _history.len() == 5 {
+                        return "moved".to_string();
+                    }
+                    return "wrong".to_string();
+                }),
+                Some(6)
+            );
+        }
+        #[test]
+        fn always_wrong() {
+            let w = Wordle::new();
+            assert_eq!(
+                w.play("moved", |_history: &[Guess]| "wrong".to_string()),
+                None
+            );
         }
     }
 
