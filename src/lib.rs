@@ -13,7 +13,7 @@ impl Wordle {
         Self {
             dictionary: HashSet::from_iter(DICTIONARY.lines().map(|line| {
                 line.split_once(' ')
-                    .expect("every line shoul be word and count separated by space")
+                    .expect("every line should be word and count separated by space")
                     .0
             })),
         }
@@ -93,9 +93,10 @@ pub struct Guess {
 impl Guess {
     pub fn matches(&self, word: &str) -> bool {
         //check greens
-        assert_eq!(self.word.len(), 3);
-        assert_eq!(word.len(), 3);
+        assert_eq!(self.word.len(), 5);
+        assert_eq!(word.len(), 5);
         let mut used = [false; 5];
+        //MARK ALL CORECCTLY PLACED CHARS FIRST
         for (i, ((g, m), w)) in self
             .word
             .chars()
@@ -111,34 +112,50 @@ impl Guess {
             }
         }
 
-        for (i, ((g, m), w)) in self
-            .word
-            .chars()
-            .zip(&self.mask)
-            .zip(word.chars())
-            .enumerate()
-        {
-            if let Some(j) =
-                self.word
-                    .chars()
-                    .zip(&self.mask)
-                    .enumerate()
-                    .find_map(|(j, (g, m))| {
-                        //if char of guess does not match the char from word being checked
-                        if g != w || used[j] {
-                            return None;
-                        };
-                        //we're looking for a char 'X' in 'word, and hace found a char 'X' in previous guess;
-                        //it's colout in the previous geuss shoudl tell us if the current char might be okay
-                        match m {
-                            Correctness::Correct => unreachable!(),
-                            Correctness::Misplaced => todo!(),
-                            Correctness::Wrong => todo!(),
+        for (i, (w, m)) in word.chars().zip(&self.mask).enumerate() {
+            if *m == Correctness::Correct {
+                //already evaluated in loop above
+                continue;
+            }
+            let mut plausible = true;
+            //if this letter occurs in the previous guess and was marked as misplaced
+            if self
+                .word
+                .chars()
+                .zip(&self.mask)
+                .enumerate()
+                .any(|(j, (g, m))| {
+                    //if char of guess does not match the char from word being checked
+                    if g != w || used[j] {
+                        return false;
+                    };
+                    //we're looking for a char 'w' in 'word, and have found a char 'w' in previous guess;
+                    //it's colour in the previous geuss shoudl tell us if the current char might be okay
+                    match m {
+                        Correctness::Correct => unreachable!("all correct guesses are used"),
+                        Correctness::Misplaced => {
+                            //if w was misplaced int he same position in the prev guess, this curr possible 'word' cannot be the solution word
+                            if j == i {
+                                plausible = false;
+                                return false;
+                            }
+                            used[j] = true;
+                            return true;
                         }
-                    })
-            {}
+                        Correctness::Wrong => {
+                            plausible = false;
+                            return false;
+                        }
+                    }
+                })
+            {
+                //word might be correct i.e 'w' was yellow in the prev guess;
+                assert!(plausible);
+            } else if !plausible {
+                return false;
+            } else {
+            }
         }
-        for (i, w) in word.chars().enumerate() {}
         true
     }
 }

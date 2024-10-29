@@ -1,6 +1,57 @@
 // use super::*;
-
+macro_rules! mask  {
+    (C) => {Correctness::Correct};
+    (M) => {Correctness::Misplaced};
+    (W) => {Correctness::Wrong};
+    ($($c:tt)+) => {[
+        $(mask!($c)),+
+    ]}
+}
 mod tests {
+    #[cfg(test)]
+    mod guess_filter {
+        use crate::Correctness;
+        use crate::Guess;
+
+        macro_rules! check {
+            ($prev:literal + [$($mask:tt)+] allows $next:literal) => {
+                assert!(Guess {
+                    word: $prev.to_string(),
+                    mask: mask!($($mask)+)
+                }
+                .matches($next))
+            };
+            ($prev:literal + [$($mask:tt)+] disallows $next:literal) => {
+                assert!(!Guess {
+                    word: $prev.to_string(),
+                    mask: mask!($($mask)+)
+                }
+                .matches($next))
+            };
+        }
+        #[test]
+        fn matches() {
+            check!("abcde" + [C C C C C] allows "abcde");
+            check!("abcdf" + [C C C C C] disallows "abcde");
+            check!("eabcd" + [M M M M M] disallows "eacde");
+        }
+
+        #[test]
+        fn partial() {
+            // check!("abcfg" + [C C C W W] allows "abcde");
+            // check!("eabcd" + [M M M M M] allows "abcde");
+            // check!("aaabb" + [C M W W W] disallows "accaa");
+            check!("baaaa" + [W C M W W] allows "aaccc");
+            // check!("baaaa" + [W C M W W] disallows "caacc");
+        }
+        #[test]
+
+        fn all_wrong() {
+            check!("abcde" + [W W W W W] allows "ghijk");
+            check!("abcde" + [W W W W W] disallows "eabcd");
+        }
+    }
+
     mod game {
         use crate::Guess;
         use crate::Wordle;
@@ -90,14 +141,6 @@ mod tests {
     }
 
     mod compute {
-        macro_rules! mask  {
-            (C) => {Correctness::Correct};
-            (M) => {Correctness::Misplaced};
-            (W) => {Correctness::Wrong};
-            ($($c:tt)+) => {[
-                $(mask!($c)),+
-            ]}
-        }
 
         use crate::Correctness;
         #[test]
