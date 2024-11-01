@@ -20,15 +20,22 @@ impl Wordle {
     }
     //take an answer and try guesses
     pub fn play<G: Guesser>(&self, answer: &'static str, mut guesser: G) -> Option<usize> {
+        println!("IN WORDLE playing with answer:{answer}");
+        // assert!(self.dictionary.contains(answer));
+        // if self.dictionary.contains(answer) {
+        //     // println!("ANSWER PRESENT");
+        // }
         let mut history: Vec<Guess> = Vec::new();
         for i in 1..32 {
             let guess = guesser.guess(&history[..]);
             assert!(self.dictionary.contains(&*guess));
             if guess == answer {
+                println!("FOUND ANSWER {guess} {answer}");
                 return Some(i);
             }
 
             let correctness = Correctness::compute(answer, &guess);
+            println!("answer:{answer}, guess:{guess}, correctness: {correctness:?}");
             history.push(Guess {
                 word: guess,
                 mask: correctness,
@@ -48,7 +55,6 @@ pub enum Correctness {
 
 impl Correctness {
     fn compute(answer: &str, guess: &str) -> [Self; 5] {
-        println!("in compute answer:{}, quess:{}", answer, guess);
         assert_eq!(guess.len(), 5);
         let mut c = [Correctness::Wrong; 5];
         let mut used = [false; 5];
@@ -63,28 +69,39 @@ impl Correctness {
 
         //check for the yellow letters by checking if this letter is in the answer but not in this position
         for (i, g) in guess.chars().enumerate() {
-            if used[i] {
+            //already marked correct 
+            if c[i] == Correctness::Correct {
                 continue;
             }
             if answer.chars().enumerate().any(|(j, a)| {
                 if a == g && !used[j] {
                     used[j] = true;
-                    // println!("checking guess char {g} at pos {i} FOUND MISPLACED at {j} char: {a}");
                     return true;
                 };
                 false
             }) {
-                // println!("IN HERE");
                 c[i] = Correctness::Misplaced;
-                // println!("c after misplaced:{:?}", c);
             } else {
                 c[i] = Correctness::Wrong;
             }
         }
-        println!("returning C:{:?}", c);
         c
     }
+
+    //generate all possible permutations of length 5
+    pub fn patterns() -> impl Iterator<Item = [Correctness; 5]> {
+        itertools::iproduct!(
+            [Self::Correct, Self::Misplaced, Self::Wrong],
+            [Self::Correct, Self::Misplaced, Self::Wrong],
+            [Self::Correct, Self::Misplaced, Self::Wrong],
+            [Self::Correct, Self::Misplaced, Self::Wrong],
+            [Self::Correct, Self::Misplaced, Self::Wrong]
+        )
+        .map(|(a, b, c, d, e)| [a, b, c, d, e])
+    }
 }
+
+#[derive(Debug)]
 pub struct Guess {
     word: String,
     mask: [Correctness; 5],
@@ -93,18 +110,23 @@ pub struct Guess {
 impl Guess {
     pub fn matches(&self, word: &str) -> bool {
         //check greens
+        // println!("'prev guess{}  curr guess{}", self.word, word);
+        // if self.word == word {
+        //     return true;
+        // }
         assert_eq!(self.word.len(), 5);
         assert_eq!(word.len(), 5);
         let mut used = [false; 5];
+        // let yellows = self.mask;
         //MARK ALL CORECCTLY PLACED CHARS FIRST
-        for (i, ((g, m), w)) in self
+        for (i, ((g, &m), w)) in self
             .word
             .chars()
             .zip(&self.mask)
             .zip(word.chars())
             .enumerate()
         {
-            if *m == Correctness::Correct {
+            if m == Correctness::Correct {
                 if g != w {
                     return false;
                 }
@@ -134,9 +156,11 @@ impl Guess {
                     match m {
                         Correctness::Correct => unreachable!("all correct guesses are used"),
                         Correctness::Misplaced => {
+                            // println!("matching misplaced");
                             //if w was misplaced int he same position in the prev guess, this curr possible 'word' cannot be the solution word
                             if j == i {
                                 plausible = false;
+                                used[j] = true;
                                 return false;
                             }
                             used[j] = true;
@@ -148,12 +172,18 @@ impl Guess {
                         }
                     }
                 })
+                && plausible
             {
-                //word might be correct i.e 'w' was yellow in the prev guess;
                 assert!(plausible);
             } else if !plausible {
                 return false;
-            } else {
+            }
+            // else {
+            // }
+        }
+        for (i, m) in self.mask.iter().enumerate() {
+            if *m == Correctness::Misplaced && !used[i] {
+                return false;
             }
         }
         true

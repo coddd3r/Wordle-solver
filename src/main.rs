@@ -5,7 +5,12 @@ fn main() {
     let w = Wordle::new();
     for answer in GAMES.split_whitespace() {
         let guesser = Naive::new();
-        w.play(answer, guesser);
+        println!("ANSWER AT START: {answer}");
+        if let Some(score) = w.play(answer, guesser) {
+            println!("score {score}");
+        } else {
+            eprintln!("FAILED TO GUESS");
+        }
     }
 }
 // enum Correctness {

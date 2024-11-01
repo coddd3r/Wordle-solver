@@ -38,11 +38,12 @@ mod tests {
 
         #[test]
         fn partial() {
-            // check!("abcfg" + [C C C W W] allows "abcde");
-            // check!("eabcd" + [M M M M M] allows "abcde");
-            // check!("aaabb" + [C M W W W] disallows "accaa");
+            check!("abcfg" + [C C C W W] allows "abcde");
+            check!("eabcd" + [M M M M M] allows "abcde");
+            check!("aaabb" + [C M W W W] disallows "accaa");
             check!("baaaa" + [W C M W W] allows "aaccc");
-            // check!("baaaa" + [W C M W W] disallows "caacc");
+            check!("baaaa" + [W C M W W] disallows "caacc");
+            check!("tares" + [W M M W W] disallows "brink");
         }
         #[test]
 
@@ -178,6 +179,10 @@ mod tests {
         #[test]
         fn extra3() {
             assert_eq!(Correctness::compute("abcde", "aacde"), mask![C W C C C])
+        }
+        #[test]
+        fn debug_compute() {
+            assert_eq!(Correctness::compute("cigar", "braai"), mask![W M W C M]);
         }
         // #[test]
         // fn repeat_some() {
