@@ -1,1 +1,4 @@
 /target
+stacks.folded
+*.data.*
+.svg

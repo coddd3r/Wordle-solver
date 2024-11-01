@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashSet};
+use std::collections::HashSet;
 
 const DICTIONARY: &str = include_str!("../../dictionary.txt");
 
@@ -37,7 +37,7 @@ impl Wordle {
             let correctness = Correctness::compute(answer, &guess);
             println!("answer:{answer}, guess:{guess}, correctness: {correctness:?}");
             history.push(Guess {
-                word: Cow::Owned(guess),
+                word: guess,
                 mask: correctness,
             })
         }
@@ -101,13 +101,12 @@ impl Correctness {
 }
 
 #[derive(Debug)]
-pub struct Guess<'a> {
-    // word: String,
-    word: Cow<'a, str>,
+pub struct Guess {
+    word: String,
     mask: [Correctness; 5],
 }
 
-impl Guess<'_> {
+impl Guess {
     pub fn matches(&self, word: &str) -> bool {
         //check greens
         // println!("'prev guess{}  curr guess{}", self.word, word);
