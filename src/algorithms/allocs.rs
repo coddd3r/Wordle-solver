@@ -65,7 +65,7 @@ impl Guesser for Allocs {
                 sum_of_probabilities += pattern_prob * pattern_prob.log2();
             }
 
-            let goodness = 0.0 - sum_of_probabilities;
+            let goodness = -sum_of_probabilities;
 
             if let Some(c) = best_candidate {
                 if goodness > c.goodness {

@@ -1,4 +1,5 @@
 // use super::*;
+
 macro_rules! mask  {
     (C) => {Correctness::Correct};
     (M) => {Correctness::Misplaced};
@@ -12,18 +13,21 @@ mod tests {
     mod guess_filter {
         use crate::Correctness;
         use crate::Guess;
+        use std::borrow::Cow;
 
         macro_rules! check {
             ($prev:literal + [$($mask:tt)+] allows $next:literal) => {
                 assert!(Guess {
-                    word: $prev.to_string(),
+                    // word: $prev.to_string(),
+                    word: Cow::Borrowed($prev),
                     mask: mask!($($mask)+)
                 }
                 .matches($next))
             };
             ($prev:literal + [$($mask:tt)+] disallows $next:literal) => {
                 assert!(!Guess {
-                    word: $prev.to_string(),
+                    // word: $prev.to_string(),
+                    word: Cow::Borrowed($prev),
                     mask: mask!($($mask)+)
                 }
                 .matches($next))

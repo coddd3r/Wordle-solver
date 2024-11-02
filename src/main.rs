@@ -1,8 +1,5 @@
-use std::{str::FromStr, usize};
-
-// use clap::ArgEnum;
-// use clap::ValueEnum;
 use clap::Parser;
+use std::{str::FromStr, usize};
 
 ///setting up argumen tparser to enable us to choose whcih algorith we want to run with our binary
 #[derive(Parser, Debug)]
@@ -31,23 +28,26 @@ impl FromStr for Algorithm {
     }
 }
 
-const GAMES: &str = include_str!("../../answers.txt");
-use solver::{algorithms::{Naive, Allocs}, Guesser, Wordle};
+const GAMES: &str = include_str!("../answers.txt");
+use solver::{
+    algorithms::{Allocs, Naive},
+    Guesser, Wordle,
+};
 fn main() {
     let args = Args::parse();
     match args.algo {
         Algorithm::Naive => play(Naive::new, args.max),
-        Algorithm::Allocs => play(Allocs::new, args.max)
+        Algorithm::Allocs => play(Allocs::new, args.max),
     }
 }
 
-fn play<G>(mut mk: impl FnMut() -> G, max: Option<usize>)
+fn play<G>(mut maker_function: impl FnMut() -> G, max: Option<usize>)
 where
     G: Guesser,
 {
     let w = Wordle::new();
     for answer in GAMES.split_whitespace().take(max.unwrap_or(usize::MAX)) {
-        let guesser = (mk)();
+        let guesser = (maker_function)();
         println!("ANSWER AT START: {answer}");
         if let Some(score) = w.play(answer, guesser) {
             println!("score {score}");
@@ -56,3 +56,4 @@ where
         }
     }
 }
+    

@@ -41,6 +41,9 @@ impl Guesser for Naive {
         //sum together probability to give a measure of the amout of information we would get from using the cadidate ass the next guess
 
         let mut best_candidate: Option<Candidate> = None;
+        //OPTIMIZATION?
+        // let mut match_cache: HashMap<(&str, &str, &[Correctness; 5]), bool> = HashMap::new();
+        // //
         for (&word, _) in &self.remaining {
             let mut sum_of_probabilities = 0.0;
             //given all possible permutations of correctness
@@ -52,8 +55,24 @@ impl Guesser for Naive {
                         word: Cow::Owned(word.to_string()),
                         mask: pattern,
                     };
-
-                    if g.matches(candidate) {
+                    //OPTIMIZATION?
+                    // let mut match_result = false;
+                    // let k = if word >= candidate {
+                    //     (word, candidate, &pattern)
+                    // }else {
+                    //     ( candidate, word, &pattern)
+                    // };
+                    // if match_cache.contains_key(&k) {
+                    //     match_result = match_cache[&k];
+                    // }else {
+                    //     match_result = g.matches(candidate);
+                    //     match_cache.entry(k).or_insert(match_result);
+                    // }
+                    // if match_result {
+                    //     in_pattern_total += count;
+                    // }
+                    // //
+                    if  g.matches(candidate) {
                         in_pattern_total += count;
                     }
                 }
@@ -65,7 +84,7 @@ impl Guesser for Naive {
                 sum_of_probabilities += pattern_prob * pattern_prob.log2();
             }
 
-            let goodness = 0.0 - sum_of_probabilities;
+            let goodness = -sum_of_probabilities;
 
             if let Some(c) = best_candidate {
                 if goodness > c.goodness {

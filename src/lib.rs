@@ -1,6 +1,6 @@
 use std::{borrow::Cow, collections::HashSet};
 
-const DICTIONARY: &str = include_str!("../../dictionary.txt");
+const DICTIONARY: &str = include_str!("../dictionary.txt");
 
 pub mod algorithms;
 
@@ -46,7 +46,7 @@ impl Wordle {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Correctness {
     Correct,
     Misplaced,
@@ -68,7 +68,7 @@ impl Correctness {
         }
         //check for the yellow letters by checking if this letter is in the answer but not in this position
         for (i, g) in guess.chars().enumerate() {
-            //already marked correct 
+            //already marked correct
             if c[i] == Correctness::Correct {
                 continue;
             }
@@ -121,9 +121,9 @@ impl Guess<'_> {
         //MARK ALL CORECCTLY PLACED CHARS FIRST
         for (i, ((g, &m), w)) in self
             .word
-            .chars()
+            .bytes()
             .zip(&self.mask)
-            .zip(word.chars())
+            .zip(word.bytes())
             .enumerate()
         {
             if m == Correctness::Correct {
@@ -134,7 +134,7 @@ impl Guess<'_> {
             }
         }
 
-        for (i, (w, m)) in word.chars().zip(&self.mask).enumerate() {
+        for (i, (w, m)) in word.bytes().zip(&self.mask).enumerate() {
             if *m == Correctness::Correct {
                 //already evaluated in loop above
                 continue;
@@ -143,7 +143,7 @@ impl Guess<'_> {
             //if this letter occurs in the previous guess and was marked as misplaced
             if self
                 .word
-                .chars()
+                .bytes()
                 .zip(&self.mask)
                 .enumerate()
                 .any(|(j, (g, m))| {
@@ -178,11 +178,9 @@ impl Guess<'_> {
             } else if !plausible {
                 return false;
             }
-            // else {
-            // }
         }
-        for (i, m) in self.mask.iter().enumerate() {
-            if *m == Correctness::Misplaced && !used[i] {
+        for (i, &m) in self.mask.iter().enumerate() {
+            if m == Correctness::Misplaced && !used[i] {
                 return false;
             }
         }
@@ -200,7 +198,7 @@ impl<F: Fn(&[Guess]) -> String> Guesser for F {
     }
 }
 
-#[cfg(test)]
+// #[cfg(test)]
 // macro_rules! guesser {
 //     (|$history:ident| $impl:block) => {{
 //         struct G;
