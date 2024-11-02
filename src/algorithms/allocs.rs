@@ -75,6 +75,7 @@ impl Guesser for Allocs {
                 best_candidate = Some(Candidate { word, goodness });
             }
         }
+        
         best_candidate.unwrap().word.to_string()
     }
 }

@@ -20,10 +20,10 @@ impl Wordle {
     }
     //take an answer and try guesses
     pub fn play<G: Guesser>(&self, answer: &'static str, mut guesser: G) -> Option<usize> {
-        println!("IN WORDLE playing with answer:{answer}");
+        //println!("IN WORDLE playing with answer:{answer}");
         // assert!(self.dictionary.contains(answer));
         // if self.dictionary.contains(answer) {
-        //     // println!("ANSWER PRESENT");
+        //     // //println!("ANSWER PRESENT");
         // }
         let mut history: Vec<Guess> = Vec::new();
         for i in 1..32 {
@@ -35,7 +35,7 @@ impl Wordle {
             }
 
             let correctness = Correctness::compute(answer, &guess);
-            println!("answer:{answer}, guess:{guess}, correctness: {correctness:?}");
+            println!("IN PLAY answer:{answer}, guess:{guess}, correctness: {correctness:?}");
             history.push(Guess {
                 word: Cow::Owned(guess),
                 mask: correctness,
@@ -56,6 +56,7 @@ pub enum Correctness {
 impl Correctness {
     fn compute(answer: &str, guess: &str) -> [Self; 5] {
         assert_eq!(guess.len(), 5);
+        assert_eq!(answer.len(), 5);
         let mut c = [Correctness::Wrong; 5];
         let mut used = [false; 5];
 
@@ -108,34 +109,50 @@ pub struct Guess<'a> {
 }
 
 impl Guess<'_> {
+    //is faster than old matches with no double yellow check
+    // slower than matches with double yellow check
+    pub fn matches_faster(&self, word: &str) -> bool {
+        // let b_mask = Correctness::compute(word, &self.word);
+        // let b = b_mask == self.mask;
+
+        // let a = self.matches_faster(word);
+        // assert_eq!(a, b, "\ncurr:{} candidate:{} curr mask{:?},compute mask:{:?}\n", self.word, word, self.mask, b_mask);
+
+        Correctness::compute(word, &self.word) == self.mask
+    }
+
     pub fn matches(&self, word: &str) -> bool {
-        //check greens
-        // println!("'prev guess{}  curr guess{}", self.word, word);
-        // if self.word == word {
-        //     return true;
-        // }
         assert_eq!(self.word.len(), 5);
         assert_eq!(word.len(), 5);
+
         let mut used = [false; 5];
-        // let yellows = self.mask;
         //MARK ALL CORECCTLY PLACED CHARS FIRST
         for (i, ((g, &m), w)) in self
             .word
-            .bytes()
+            .chars()
             .zip(&self.mask)
-            .zip(word.bytes())
+            .zip(word.chars())
             .enumerate()
         {
-            if m == Correctness::Correct {
-                if g != w {
-                    return false;
+            // if the prev guess was correct at this position but the letters differ then this candidate does not match
+            match m {
+                Correctness::Correct => {
+                    if g != w {
+                        return false;
+                    }
+                    used[i] = true;
                 }
-                used[i] = true;
+                // if wrong or misplaced in previous guess and is the same letter at the same position in candidate, then no match
+                _ => {
+                    if g == w {
+                        return false;
+                    }
+                }
             }
         }
 
-        for (i, (w, m)) in word.bytes().zip(&self.mask).enumerate() {
-            if *m == Correctness::Correct {
+        for (i, (w, &w_m)) in word.chars().zip(&self.mask).enumerate() {
+            if w_m == Correctness::Correct {
                 //already evaluated in loop above
                 continue;
             }
@@ -143,30 +160,34 @@ impl Guess<'_> {
             //if this letter occurs in the previous guess and was marked as misplaced
             if self
                 .word
-                .bytes()
+                .chars()
                 .zip(&self.mask)
                 .enumerate()
-                .any(|(j, (g, m))| {
+                .any(|(j, (g, &m))| {
                     //if char of guess does not match the char from word being checked
-                    if g != w || used[j] {
+                    // println!("in word index:{i} letter:{w} self index:{j} letter:{g}");
+                    if g != w || m == Correctness::Correct || used[j] {
                         return false;
                     };
+
                     //we're looking for a char 'w' in 'word, and have found a char 'w' in previous guess;
                     //it's colour in the previous geuss shoudl tell us if the current char might be okay
                     match m {
                         Correctness::Correct => unreachable!("all correct guesses are used"),
                         Correctness::Misplaced => {
-                            // println!("matching misplaced");
+                            // println!("matching misplaced, self.word letter:{} j:{j} word letter:{} i:{i}", g as char, w as char);
                             //if w was misplaced int he same position in the prev guess, this curr possible 'word' cannot be the solution word
                             if j == i {
-                                plausible = false;
-                                used[j] = true;
-                                return false;
+                                unreachable!();
                             }
+                            //if misplaced but at different positions, could be true
+                            //println!("setting used true in misplaced at self index:{j}, word index:{i} self letter: {}, word letter :{}", g as char, w as char);
                             used[j] = true;
                             return true;
                         }
                         Correctness::Wrong => {
+                            if j == i {unreachable!()}
+                            //letter cannot be present anywhere
                             plausible = false;
                             return false;
                         }
@@ -176,11 +197,17 @@ impl Guess<'_> {
             {
                 assert!(plausible);
             } else if !plausible {
+                //println!("returning false");
                 return false;
             }
         }
-        for (i, &m) in self.mask.iter().enumerate() {
-            if m == Correctness::Misplaced && !used[i] {
+
+        //TODO: Always uncomment
+        //NOTE: this part if a fix to make sure there are no unused yellows in any potential candidate
+        //Faster than using correctness compute and way faster than the matches without it
+        for (j, &m) in self.mask.iter().enumerate() {
+            if m == Correctness::Misplaced && !used[j] {
+                //println!("returning false in EXTRA LOOP");
                 return false;
             }
         }

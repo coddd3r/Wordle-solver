@@ -9,7 +9,12 @@ macro_rules! mask  {
     ]}
 }
 mod tests {
-    #[cfg(test)]
+
+    // #[cfg(test)]
+    // mod matches {
+
+    // }
+    // #[cfg(test)]
     mod guess_filter {
         use crate::Correctness;
         use crate::Guess;
@@ -54,6 +59,17 @@ mod tests {
         fn all_wrong() {
             check!("abcde" + [W W W W W] allows "ghijk");
             check!("abcde" + [W W W W W] disallows "eabcd");
+        }
+        #[test]
+        fn from_crash() {
+            check!("tares" + [W M M W W] disallows "brink");
+            check!("tares" + [W M M W W] disallows "rural");
+            check!("tares" + [W M M W W] disallows "arrah");
+            check!("tares" + [W M M W W] disallows "heapy");
+            check!("tares" + [W M M W W] allows "flora");
+            check!("tares" + [W M M W W] allows "araba");
+            check!("praam" + [C C M W W] disallows "prial");
+            // check!("urari" + [])            
         }
     }
 
@@ -146,7 +162,6 @@ mod tests {
     }
 
     mod compute {
-
         use crate::Correctness;
         #[test]
         fn all_green() {
@@ -187,6 +202,8 @@ mod tests {
         #[test]
         fn debug_compute() {
             assert_eq!(Correctness::compute("cigar", "braai"), mask![W M W C M]);
+            assert_eq!(Correctness::compute("tares", "rural"), mask![W W C M W]);
+            // assert_eq!(Correctness::compute_faster("tares", "rural"), mask![W W C M W]);
         }
         // #[test]
         // fn repeat_some() {

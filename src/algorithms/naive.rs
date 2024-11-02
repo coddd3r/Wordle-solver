@@ -5,7 +5,7 @@ use crate::{Correctness, Guess, Guesser, DICTIONARY};
 pub struct Naive {
     remaining: HashMap<&'static str, usize>,
 }
-
+    
 impl Naive {
     pub fn new() -> Self {
         Self {
