@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::{str::FromStr, usize};
+use std::{f32::consts::PI, str::FromStr, usize};
 
 ///setting up argumen tparser to enable us to choose whcih algorith we want to run with our binary
 #[derive(Parser, Debug)]
@@ -16,7 +16,8 @@ enum Algorithm {
     Naive,
     Allocs,
     VecRem,
-    InitOnce
+    InitOnce,
+    PreCalc,
 }
 
 impl FromStr for Algorithm {
@@ -26,7 +27,8 @@ impl FromStr for Algorithm {
             "naive" => Ok(Self::Naive),
             "allocs" => Ok(Self::Allocs),
             "vecrem" => Ok(Self::VecRem),
-            "initonce" => Ok(Self::InitOnce ),
+            "initonce" => Ok(Self::InitOnce),
+            "precalc" => Ok(Self::PreCalc),
             _ => Err(format!("don't have that algo implemented '{}'", s)),
         }
     }
@@ -34,7 +36,7 @@ impl FromStr for Algorithm {
 
 const GAMES: &str = include_str!("../source_txt/answers.txt");
 use solver::{
-    algorithms::{Allocs, Naive, VecRem, InitOnce},
+    algorithms::{Allocs, InitOnce, Naive, PreCalc, VecRem},
     Guesser, Wordle,
 };
 fn main() {
@@ -44,6 +46,7 @@ fn main() {
         Algorithm::Allocs => play(Allocs::new, args.max),
         Algorithm::VecRem => play(VecRem::new, args.max),
         Algorithm::InitOnce => play(InitOnce::new, args.max),
+        Algorithm::PreCalc => play(PreCalc::new, args.max),
     }
 }
 
