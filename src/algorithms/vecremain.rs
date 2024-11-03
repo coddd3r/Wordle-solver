@@ -1,15 +1,17 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
 
 use crate::{Correctness, Guess, Guesser, DICTIONARY};
 
-pub struct Allocs {
-    remaining: HashMap<&'static str, usize>,
+//remining does not need to be a map since we dont look into it
+pub struct VecRem {
+    // remaining: HashMap<&'static str, usize>,
+    remaining: Vec<(&'static str, usize)>,
 }
 
-impl Allocs {
+impl VecRem {
     pub fn new() -> Self {
         Self {
-            remaining: HashMap::from_iter(DICTIONARY.lines().map(|line| {
+            remaining: Vec::from_iter(DICTIONARY.lines().map(|line| {
                 let (q, b) = line.split_once(' ').unwrap();
                 (q, b.parse().expect("every count is a number"))
             })),
@@ -22,9 +24,9 @@ struct Candidate {
     goodness: f64,
 }
 
-impl Guesser for Allocs {
+impl Guesser for VecRem {
     fn guess(&mut self, history: &[Guess]) -> String {
-        //println!("in Allocs calculating best guess...");
+        //println!("in VecRem calculating best guess...");
 
         if history.is_empty() {
             return "tares".to_string();
@@ -32,22 +34,22 @@ impl Guesser for Allocs {
 
         if let Some(last) = history.last() {
             //filter out possibilities in self.remaining based on history of guesses
-            self.remaining.retain(|&word, _| last.matches(word));
+            self.remaining.retain(|&(word, _)| last.matches(word));
         }
         //total count of all remaining words' frequencies
-        let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
+        let remaining_count: usize = self.remaining.iter().map(|&(_, c)| c).sum();
 
         //if we were to guess a word in the remaining candidates, what is the probability of getting each pattern
         //sum together probability to give a measure of the amout of information we would get from using the cadidate ass the next guess
 
         let mut best_candidate: Option<Candidate> = None;
-        for (&word, _) in &self.remaining {
+        for &(word, _) in &self.remaining {
             let mut sum_of_probabilities = 0.0;
             //given all possible permutations of correctness
             for pattern in Correctness::patterns() {
                 let mut in_pattern_total = 0;
                 //if we guessed a word and got pattern, compute words that are left
-                for (&candidate, count) in &self.remaining {
+                for &(candidate, count) in &self.remaining {
                     let g = Guess {
                         word: Cow::Borrowed(word),
                         mask: pattern,
@@ -75,7 +77,7 @@ impl Guesser for Allocs {
                 best_candidate = Some(Candidate { word, goodness });
             }
         }
-        
+
         best_candidate.unwrap().word.to_string()
     }
 }

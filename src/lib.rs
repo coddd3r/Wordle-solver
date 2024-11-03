@@ -1,6 +1,6 @@
 use std::{borrow::Cow, collections::HashSet};
 
-const DICTIONARY: &str = include_str!("../dictionary.txt");
+const DICTIONARY: &str = include_str!("../source_txt/dictionary.txt");
 
 pub mod algorithms;
 
@@ -61,19 +61,19 @@ impl Correctness {
         let mut used = [false; 5];
 
         //mark all correctly placed letters
-        for (i, (a, g)) in answer.chars().zip(guess.chars()).enumerate() {
+        for (i, (a, g)) in answer.bytes().zip(guess.bytes()).enumerate() {
             if a == g {
                 c[i] = Correctness::Correct;
                 used[i] = true;
             }
         }
         //check for the yellow letters by checking if this letter is in the answer but not in this position
-        for (i, g) in guess.chars().enumerate() {
+        for (i, g) in guess.bytes().enumerate() {
             //already marked correct
             if c[i] == Correctness::Correct {
                 continue;
             }
-            if answer.chars().enumerate().any(|(j, a)| {
+            if answer.bytes().enumerate().any(|(j, a)| {
                 if a == g && !used[j] {
                     used[j] = true;
                     return true;
@@ -111,17 +111,17 @@ pub struct Guess<'a> {
 impl Guess<'_> {
     //is faster than old matches with no double yellow check
     // slower than matches with double yellow check
-    pub fn matches_faster(&self, word: &str) -> bool {
+    pub fn matches(&self, word: &str) -> bool {
         // let b_mask = Correctness::compute(word, &self.word);
         // let b = b_mask == self.mask;
 
         // let a = self.matches_faster(word);
         // assert_eq!(a, b, "\ncurr:{} candidate:{} curr mask{:?},compute mask:{:?}\n", self.word, word, self.mask, b_mask);
-
+        //b
         Correctness::compute(word, &self.word) == self.mask
     }
 
-    pub fn matches(&self, word: &str) -> bool {
+    pub fn matches_faster(&self, word: &str) -> bool {
         assert_eq!(self.word.len(), 5);
         assert_eq!(word.len(), 5);
 
@@ -129,9 +129,9 @@ impl Guess<'_> {
         //MARK ALL CORECCTLY PLACED CHARS FIRST
         for (i, ((g, &m), w)) in self
             .word
-            .chars()
+            .bytes()
             .zip(&self.mask)
-            .zip(word.chars())
+            .zip(word.bytes())
             .enumerate()
         {
             // if the prev guess was correct at this position but the letters differ then this candidate does not match
@@ -151,7 +151,7 @@ impl Guess<'_> {
             }
         }
 
-        for (i, (w, &w_m)) in word.chars().zip(&self.mask).enumerate() {
+        for (i, (w, &w_m)) in word.bytes().zip(&self.mask).enumerate() {
             if w_m == Correctness::Correct {
                 //already evaluated in loop above
                 continue;
@@ -160,7 +160,7 @@ impl Guess<'_> {
             //if this letter occurs in the previous guess and was marked as misplaced
             if self
                 .word
-                .chars()
+                .bytes()
                 .zip(&self.mask)
                 .enumerate()
                 .any(|(j, (g, &m))| {
@@ -186,7 +186,9 @@ impl Guess<'_> {
                             return true;
                         }
                         Correctness::Wrong => {
-                            if j == i {unreachable!()}
+                            if j == i {
+                                unreachable!()
+                            }
                             //letter cannot be present anywhere
                             plausible = false;
                             return false;

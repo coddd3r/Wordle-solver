@@ -15,6 +15,7 @@ struct Args {
 enum Algorithm {
     Naive,
     Allocs,
+    VecRem,
 }
 
 impl FromStr for Algorithm {
@@ -23,14 +24,15 @@ impl FromStr for Algorithm {
         match s {
             "naive" => Ok(Self::Naive),
             "allocs" => Ok(Self::Allocs),
+            "vecrem" => Ok(Self::VecRem),
             _ => Err(format!("don't have that algo implemented '{}'", s)),
         }
     }
 }
 
-const GAMES: &str = include_str!("../answers.txt");
+const GAMES: &str = include_str!("../source_txt/answers.txt");
 use solver::{
-    algorithms::{Allocs, Naive},
+    algorithms::{Allocs, Naive, VecRem},
     Guesser, Wordle,
 };
 fn main() {
@@ -38,6 +40,7 @@ fn main() {
     match args.algo {
         Algorithm::Naive => play(Naive::new, args.max),
         Algorithm::Allocs => play(Allocs::new, args.max),
+        Algorithm::VecRem => play(VecRem::new, args.max),
     }
 }
 
@@ -56,4 +59,3 @@ where
         }
     }
 }
-    
