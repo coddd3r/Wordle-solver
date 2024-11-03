@@ -20,11 +20,6 @@ impl Wordle {
     }
     //take an answer and try guesses
     pub fn play<G: Guesser>(&self, answer: &'static str, mut guesser: G) -> Option<usize> {
-        //println!("IN WORDLE playing with answer:{answer}");
-        // assert!(self.dictionary.contains(answer));
-        // if self.dictionary.contains(answer) {
-        //     // //println!("ANSWER PRESENT");
-        // }
         let mut history: Vec<Guess> = Vec::new();
         for i in 1..32 {
             let guess = guesser.guess(&history[..]);
@@ -42,7 +37,6 @@ impl Wordle {
             })
         }
         None
-        // panic!("TOO MANY ATTEMPTS")
     }
 }
 
@@ -81,7 +75,7 @@ impl Correctness {
                 false
             }) {
                 c[i] = Correctness::Misplaced;
-            } else {
+            } else { 
                 c[i] = Correctness::Wrong;
             }
         }
@@ -112,12 +106,6 @@ impl Guess<'_> {
     //is faster than old matches with no double yellow check
     // slower than matches with double yellow check
     pub fn matches(&self, word: &str) -> bool {
-        // let b_mask = Correctness::compute(word, &self.word);
-        // let b = b_mask == self.mask;
-
-        // let a = self.matches_faster(word);
-        // assert_eq!(a, b, "\ncurr:{} candidate:{} curr mask{:?},compute mask:{:?}\n", self.word, word, self.mask, b_mask);
-        //b
         Correctness::compute(word, &self.word) == self.mask
     }
 

@@ -538,6 +538,7 @@ dependencies = [
  "clap 3.2.25",
  "inferno",
  "itertools",
+ "once_cell",
 ]
 
 [[package]]

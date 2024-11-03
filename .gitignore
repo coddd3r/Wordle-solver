@@ -1,5 +1,6 @@
 /target
 stacks.folded
 *.data.*
-.svg
+*.svg
+*.data
 result_texts/
