@@ -1,17 +1,18 @@
 use once_cell::sync::OnceCell;
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::BTreeMap};
 
 use crate::{Correctness, Guess, Guesser, DICTIONARY};
 
 static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
-static MATCH_HISTORY: OnceCell<HashMap<(&'static str, &'static str, [Correctness; 5]), bool>> =
+//store match history in a Hashmap
+static MATCH_HISTORY: OnceCell<BTreeMap<(&'static str, &'static str, [Correctness; 5]), bool>> =
     OnceCell::new();
 
 //remining does not need to be a map since we dont look into it
 //initialize remaining exactly once using oncecell
 //only set to owned when we start pruning
 pub struct PreCalc {
-    // remaining: HashMap<&'static str, usize>,
+    // remaining: BTreeMap<&'static str, usize>,
     // remaining: Vec<(&'static str, usize)>,
     remaining: Cow<'static, Vec<(&'static str, usize)>>,
 }
@@ -20,10 +21,12 @@ impl PreCalc {
     pub fn new() -> Self {
         Self {
             remaining: Cow::Borrowed(INITIAL.get_or_init(|| {
-                Vec::from_iter(DICTIONARY.lines().map(|line| {
+                let mut words = Vec::from_iter(DICTIONARY.lines().map(|line| {
                     let (q, b) = line.split_once(' ').unwrap();
                     (q, b.parse().expect("every count is a number"))
-                }))
+                }));
+                words.sort_unstable_by_key(|&(_, count)| std::cmp::Reverse(count));
+                words
             })),
         }
     }
@@ -71,24 +74,22 @@ impl Guesser for PreCalc {
                 let mut in_pattern_total = 0;
                 //if we guessed a word and got pattern, compute words that are left
                 for &(candidate, count) in &*self.remaining {
-                    let matches = MATCH_HISTORY.get_or_init(|| {
-                        let words = INITIAL.get().unwrap();
-                        let patterns = Correctness::patterns();
-                        let mut out: HashMap<(&str, &str, [Correctness; 5]), bool> =
-                            HashMap::with_capacity(
-                                (words.len() * words.len() * patterns.count()) / 2,
-                            );
-                        for &(word1, _) in INITIAL.get().unwrap() {
-                            for &(word2, _) in INITIAL.get().unwrap() {
+                    let matches_hist = MATCH_HISTORY.get_or_init(|| {
+                        const MAX_SIZE: usize = 256;
+                        let words = &INITIAL.get().unwrap()[..MAX_SIZE];
+                        // let patterns = Correctness::patterns();
+                        let mut out = BTreeMap::new();
+                        for &(word1, _) in words {
+                            for &(word2, _) in words {
+                                if word2 < word1 {
+                                    break;
+                                }
                                 for pattern in Correctness::patterns() {
-                                    if word2 < word1 {
-                                        break;
-                                    }
                                     let g = Guess {
-                                        word: Cow::Borrowed(word),
+                                        word: Cow::Borrowed(word1),
                                         mask: pattern,
                                     };
-                                    out.insert((word1, word2, pattern), g.matches(candidate));
+                                    out.insert((word1, word2, pattern), g.matches(word2));
                                 }
                             }
                         }
@@ -99,7 +100,13 @@ impl Guesser for PreCalc {
                     } else {
                         (candidate, word, pattern)
                     };
-                    if *matches.get(&key).unwrap() {
+                    if matches_hist.get(&key).copied().unwrap_or_else(|| {
+                        let g = Guess {
+                            word: Cow::Borrowed(word),
+                            mask: pattern,
+                        };
+                        g.matches(candidate)
+                    }) {
                         in_pattern_total += count;
                     };
                 }

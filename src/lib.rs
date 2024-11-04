@@ -40,7 +40,7 @@ impl Wordle {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Correctness {
     Correct,
     Misplaced,
@@ -75,7 +75,7 @@ impl Correctness {
                 false
             }) {
                 c[i] = Correctness::Misplaced;
-            } else { 
+            } else {
                 c[i] = Correctness::Wrong;
             }
         }
@@ -105,11 +105,11 @@ pub struct Guess<'a> {
 impl Guess<'_> {
     //is faster than old matches with no double yellow check
     // slower than matches with double yellow check
-    pub fn matches(&self, word: &str) -> bool {
+    pub fn matches_compute(&self, word: &str) -> bool {
         Correctness::compute(word, &self.word) == self.mask
     }
 
-    pub fn matches_faster(&self, word: &str) -> bool {
+    pub fn matches(&self, word: &str) -> bool {
         assert_eq!(self.word.len(), 5);
         assert_eq!(word.len(), 5);
 
@@ -187,7 +187,6 @@ impl Guess<'_> {
             {
                 assert!(plausible);
             } else if !plausible {
-                //println!("returning false");
                 return false;
             }
         }
@@ -197,7 +196,6 @@ impl Guess<'_> {
         //Faster than using correctness compute and way faster than the matches without it
         for (j, &m) in self.mask.iter().enumerate() {
             if m == Correctness::Misplaced && !used[j] {
-                //println!("returning false in EXTRA LOOP");
                 return false;
             }
         }

@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::{f32::consts::PI, str::FromStr, usize};
+use std::{str::FromStr, usize};
 
 ///setting up argumen tparser to enable us to choose whcih algorith we want to run with our binary
 #[derive(Parser, Debug)]
