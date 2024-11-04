@@ -12,3 +12,6 @@ pub use init_once::InitOnce;
 
 mod precalc;
 pub use precalc::PreCalc;
+
+mod weight;
+pub use weight::Weight;

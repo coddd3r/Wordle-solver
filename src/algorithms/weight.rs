@@ -1,3 +1,7 @@
+/*
+    calculate the prob of word among remaining candidates and add to goodness measure
+*/
+
 use once_cell::sync::OnceCell;
 use std::{borrow::Cow, collections::BTreeMap};
 
@@ -8,16 +12,11 @@ static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
 static MATCH_HISTORY: OnceCell<BTreeMap<(&'static str, &'static str, [Correctness; 5]), bool>> =
     OnceCell::new();
 
-//remining does not need to be a map since we dont look into it
-//initialize remaining exactly once using oncecell
-//only set to owned when we start pruning
-pub struct PreCalc {
-    // remaining: BTreeMap<&'static str, usize>,
-    // remaining: Vec<(&'static str, usize)>,
+pub struct Weight {
     remaining: Cow<'static, Vec<(&'static str, usize)>>,
 }
 
-impl PreCalc {
+impl Weight {
     pub fn new() -> Self {
         Self {
             remaining: Cow::Borrowed(INITIAL.get_or_init(|| {
@@ -37,7 +36,7 @@ struct Candidate {
     goodness: f64,
 }
 
-impl Guesser for PreCalc {
+impl Guesser for Weight {
     fn guess(&mut self, history: &[Guess]) -> String {
         if history.is_empty() {
             return "tares".to_string();
@@ -67,7 +66,7 @@ impl Guesser for PreCalc {
         //sum together probability to give a measure of the amout of information we would get from using the cadidate ass the next guess
 
         let mut best_candidate: Option<Candidate> = None;
-        for &(word, _) in &*self.remaining {
+        for &(word, count) in &*self.remaining {
             let mut sum_of_probabilities = 0.0;
             //given all possible permutations of correctness
             for pattern in Correctness::patterns() {
@@ -118,7 +117,8 @@ impl Guesser for PreCalc {
                 sum_of_probabilities += pattern_prob * pattern_prob.log2();
             }
 
-            let goodness = -sum_of_probabilities;
+            let word_probability = count as f64/ remaining_count as f64;
+            let goodness = word_probability * -sum_of_probabilities;
 
             if let Some(c) = best_candidate {
                 if goodness > c.goodness {
