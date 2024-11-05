@@ -104,11 +104,11 @@ pub struct Guess<'a> {
 impl Guess<'_> {
     //is faster than old matches with no double yellow check
     // slower than matches with double yellow check
-    pub fn matches(&self, word: &str) -> bool {
+    pub fn matches_compute(&self, word: &str) -> bool {
         Correctness::compute(word, &self.word) == self.mask
     }
 
-    pub fn matches_faster(&self, word: &str) -> bool {
+    pub fn matches(&self, word: &str) -> bool {
         assert_eq!(self.word.len(), 5);
         assert_eq!(word.len(), 5);
 

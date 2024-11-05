@@ -20,6 +20,7 @@ enum Algorithm {
     PreCalc,
     Weight,
     Prune,
+    Cutoff,
 }
 
 impl FromStr for Algorithm {
@@ -33,6 +34,7 @@ impl FromStr for Algorithm {
             "precalc" => Ok(Self::PreCalc),
             "weight" => Ok(Self::Weight),
             "prune" => Ok(Self::Prune),
+            "cutoff" => Ok(Self::Cutoff),
             _ => Err(format!("don't have that algo implemented '{}'", s)),
         }
     }
@@ -40,7 +42,7 @@ impl FromStr for Algorithm {
 
 const GAMES: &str = include_str!("../source_txt/answers.txt");
 use solver::{
-    algorithms::{Allocs, InitOnce, Naive, PreCalc, Prune, VecRem, Weight},
+    algorithms::{Allocs, InitOnce, Naive, PreCalc, Prune, VecRem, Weight, Cutoff},
     Guesser, Wordle,
 };
 fn main() {
@@ -53,6 +55,7 @@ fn main() {
         Algorithm::PreCalc => play(PreCalc::new, args.max),
         Algorithm::Weight => play(Weight::new, args.max),
         Algorithm::Prune => play(Prune::new, args.max),
+        Algorithm::Cutoff => play(Cutoff::new, args.max),
     }
 }
 

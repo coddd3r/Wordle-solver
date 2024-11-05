@@ -1,5 +1,5 @@
 /*
-do not reconsider patterns we've already eliminated
+    only consider a specific n of most likely words in self.remaining
 */
 
 use once_cell::sync::OnceCell;
@@ -9,19 +9,21 @@ use crate::{Correctness, Guess, Guesser, DICTIONARY};
 
 static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
 static PATTERNS: OnceCell<Vec<[Correctness; 5]>> = OnceCell::new();
-pub struct Prune {
+pub struct Cutoff {
     remaining: Cow<'static, Vec<(&'static str, usize)>>,
     patterns: Cow<'static, Vec<[Correctness; 5]>>,
 }
 
-impl Prune {
+impl Cutoff {
     pub fn new() -> Self {
         Self {
             remaining: Cow::Borrowed(INITIAL.get_or_init(|| {
-                Vec::from_iter(DICTIONARY.lines().map(|line| {
+                let mut words = Vec::from_iter(DICTIONARY.lines().map(|line| {
                     let (q, b) = line.split_once(' ').unwrap();
                     (q, b.parse().expect("every count is a number"))
-                }))
+                }));
+                words.sort_unstable_by_key(|&(_, count)| std::cmp::Reverse(count));
+                words
             })),
             patterns: Cow::Borrowed(PATTERNS.get_or_init(|| Correctness::patterns().collect())),
         }
@@ -33,9 +35,9 @@ struct Candidate {
     goodness: f64,
 }
 
-impl Guesser for Prune {
+impl Guesser for Cutoff {
     fn guess(&mut self, history: &[Guess]) -> String {
-        //println!("in Prune calculating best guess...");
+        //println!("in Cutoff calculating best guess...");
 
         if history.is_empty() {
             self.patterns = Cow::Borrowed(PATTERNS.get().unwrap());
@@ -68,6 +70,8 @@ impl Guesser for Prune {
         //sum together probability to give a measure of the amout of information we would get from using the cadidate ass the next guess
 
         let mut best_candidate: Option<Candidate> = None;
+        let mut i = 0;
+        let stop = (self.remaining.len() / 2).max(20);
         for &(word, count) in &*self.remaining {
             let mut sum_of_probabilities = 0.0;
             //given all possible permutations of correctness
@@ -114,6 +118,10 @@ impl Guesser for Prune {
                 }
             } else {
                 best_candidate = Some(Candidate { word, goodness });
+            }
+            i += 1;
+            if i > stop {
+                break;
             }
         }
 
