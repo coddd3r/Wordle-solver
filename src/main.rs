@@ -58,13 +58,18 @@ where
     G: Guesser,
 {
     let w = Wordle::new();
+    let mut scores = 0;
+    let mut games = 0;
     for answer in GAMES.split_whitespace().take(max.unwrap_or(usize::MAX)) {
         let guesser = (maker_function)();
-        println!("ANSWER AT START: {answer}");
+        // println!("ANSWER AT START: {answer}");
+        games += 1;
         if let Some(score) = w.play(answer, guesser) {
+            scores += score;
             println!("score {score}");
         } else {
             eprintln!("FAILED TO GUESS");
         }
     }
+    println!("average score: {:.2}", scores as f64 / games as f64);
 }

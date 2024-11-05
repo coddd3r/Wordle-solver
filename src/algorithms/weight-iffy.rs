@@ -1,16 +1,16 @@
+/*
+    calculate the prob of word among remaining candidates and add to goodness measure
+*/
+
 use once_cell::sync::OnceCell;
-use std::borrow::Cow;
+use std::{borrow::Cow};
 
 use crate::{Correctness, Guess, Guesser, DICTIONARY};
 
 static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
+//store match history in a Hashmap
 
-//remining does not need to be a map since we dont look into it
-//initialize remaining exactly once using oncecell
-//only set to owned when we start pruning
 pub struct Weight {
-    // remaining: HashMap<&'static str, usize>,
-    // remaining: Vec<(&'static str, usize)>,
     remaining: Cow<'static, Vec<(&'static str, usize)>>,
 }
 
@@ -18,10 +18,12 @@ impl Weight {
     pub fn new() -> Self {
         Self {
             remaining: Cow::Borrowed(INITIAL.get_or_init(|| {
-                Vec::from_iter(DICTIONARY.lines().map(|line| {
+                let mut words = Vec::from_iter(DICTIONARY.lines().map(|line| {
                     let (q, b) = line.split_once(' ').unwrap();
                     (q, b.parse().expect("every count is a number"))
-                }))
+                }));
+                words.sort_unstable_by_key(|&(_, count)| std::cmp::Reverse(count));
+                words
             })),
         }
     }
@@ -34,12 +36,10 @@ struct Candidate {
 
 impl Guesser for Weight {
     fn guess(&mut self, history: &[Guess]) -> String {
-        //println!("in Weight calculating best guess...");
-
         if history.is_empty() {
             return "tares".to_string();
         }
-        
+
         if let Some(last) = history.last() {
             //filter out possibilities in self.remaining based on history of guesses
             //if the pointer is laready owned then just take a mut
@@ -75,10 +75,9 @@ impl Guesser for Weight {
                         word: Cow::Borrowed(word),
                         mask: pattern,
                     };
-
                     if g.matches(candidate) {
                         in_pattern_total += count;
-                    }
+                    };
                 }
                 //count the total frequencies of words that would match this pattern divided by all remaining candidates
                 if in_pattern_total == 0 {
@@ -87,6 +86,7 @@ impl Guesser for Weight {
                 let pattern_prob = in_pattern_total as f64 / remaining_count as f64;
                 sum_of_probabilities += pattern_prob * pattern_prob.log2();
             }
+
             let word_probability = count as f64 / remaining_count as f64;
             let goodness = word_probability * -sum_of_probabilities;
 
